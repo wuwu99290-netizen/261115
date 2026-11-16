@@ -17,7 +17,7 @@
   --orange:#ff9100;
   --ink:#050507;
   --text:#f5f5f7;
-  --muted:#a1a1b5;
+  --muted:#c4c7d9;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;user-select:none}
@@ -290,6 +290,57 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   .row-title{font-size:9px;padding:1px}
 }
 
+
+/* CINEMATIC CAMERA, DASH, ACTIVE ARROW & STATUS ICONS */
+.battle-arena-6v6{transition:transform .28s cubic-bezier(.22,1,.36,1);transform-origin:center center}
+.battle-arena-6v6.cam-atk{transform:scale(1.055) translateX(-14px)}
+.battle-arena-6v6.cam-ult{transform:scale(1.09) translateX(-20px)}
+.unit-6{min-height:82px;padding:6px;gap:8px;overflow:visible}
+.unit-6 img{width:54px;height:70px;border-radius:4px}
+.unit-6.dimmed{opacity:.68;filter:brightness(.82)}
+.unit-6.active-turn{opacity:1;filter:none;border-color:var(--yellow);box-shadow:0 0 18px rgba(255,214,0,0.65),3px 3px 0 var(--ink);transform:scale(1.05)}
+.unit-6.active-turn::before{
+  content:'▼';position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+  color:var(--yellow);font-size:13px;font-weight:900;text-shadow:0 2px 4px #000;animation:arrowBob .6s infinite alternate;
+}
+@keyframes arrowBob{from{transform:translate(-50%,0)}to{transform:translate(-50%,-4px)}}
+.unit-6.dash-atk{transform:translateX(30px) scale(1.08) !important;z-index:10}
+.unit-6.recoil{transform:translateX(14px) rotate(3deg) !important;filter:brightness(2.5)}
+.status-icons{position:absolute;top:-6px;right:-4px;display:flex;gap:2px;z-index:5}
+.st-ico{background:#0b0b0f;border:1.5px solid var(--yellow);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px}
+.item-card.ssr img{animation:ssrFloat 3.2s ease-in-out infinite}
+@keyframes ssrFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+/* SPEEDLINES CUT-IN & FINAL DAWN MANGA OVERLAY */
+#cutinOverlay{background:rgba(0,0,0,0.9)}
+.cutin-speedlines{
+  position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg,rgba(255,214,0,0.18) 0deg 3deg,transparent 3deg 11deg);
+  animation:spinLines 3s linear infinite;pointer-events:none;
+}
+@keyframes spinLines{to{transform:rotate(360deg)}}
+.cutin-onomatopoeia{
+  position:absolute;right:8%;top:14%;font-size:clamp(42px,8vw,86px);font-weight:900;font-style:italic;
+  color:#fff;text-shadow:4px 4px 0 var(--red),-3px -3px 0 #000;transform:rotate(-8deg);pointer-events:none;
+}
+#finalDawnOverlay{
+  position:fixed;inset:0;z-index:130;display:none;align-items:center;justify-content:center;flex-direction:column;
+  background:#08080a;overflow:hidden;
+}
+#finalDawnOverlay.bw-manga{
+  background:radial-gradient(circle,transparent 25%,#000 85%),repeating-conic-gradient(from 0deg,#fff 0deg 2deg,#08080a 2deg 9deg);
+}
+#finalDawnOverlay.white-flash{background:#fff !important}
+.dawn-kanji{
+  font-size:clamp(64px,14vw,140px);font-weight:900;font-style:italic;color:#fff;
+  text-shadow:6px 6px 0 #e51a2e,-4px -4px 0 #000,4px -4px 0 #000;letter-spacing:6px;
+  animation:slamIn .25s cubic-bezier(.16,1,.3,1);
+}
+.dawn-sub{
+  background:#000;color:#ffd600;border:4px solid #fff;padding:6px 22px;font-size:clamp(18px,3.5vw,32px);
+  font-weight:900;margin-top:10px;transform:skewX(-10deg);box-shadow:6px 6px 0 #e51a2e;
+}
+@keyframes slamIn{from{transform:scale(2.6);opacity:0}to{transform:scale(1);opacity:1}}
+
 </style>
 </head>
 <body class="halftone">
@@ -390,13 +441,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 </div>
 
 <div id="cutinOverlay">
+  <div class="cutin-speedlines"></div>
+  <div class="cutin-onomatopoeia" id="cutinOno">轟！！</div>
   <div class="cutin-strip">
-    <img id="cutinImg" src="" alt="">
+    <img id="cutinImg" src="" alt="" style="height:190px;width:142px">
     <div class="cutin-text">
       <div class="cutin-sub" id="cutinHeroName">英雄必杀技</div>
       <div class="cutin-quote" id="cutinQuote">苍穹破晓！！</div>
     </div>
   </div>
+</div>
+<div id="finalDawnOverlay">
+  <div class="dawn-kanji" id="dawnKanji">ドン！！</div>
+  <div class="dawn-sub" id="dawnSub">破晓终焉一击</div>
 </div>
 
 <div class="modal-backdrop" id="mainModal">
@@ -473,41 +530,53 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     const hair = ['#ffd600','#ff5252','#00e5ff','#ff4081','#eceff1','#9575cd','#69f0ae','#ffab40','#448aff','#f06292'][rnd(10)];
     const skin = ['#ffe4c4','#ffd2a6','#f5cba7'][rnd(3)];
     const eyeCol = hero.color || '#ffd600';
-    const hs = rnd(6), gs = rnd(5), scar = rnd(4)===0;
+    const hs = rnd(10), blush = rnd(2)===0, scar = rnd(5)===0;
     const gid = 'g_' + hero.id;
 
+    // Back hair variations (twin-tails, long straight, spiky, bob)
     let backHair = '';
-    if(hs%2===0) backHair = `<path d="M22,52 C14,85 18,125 28,140 L92,140 C102,125 106,85 98,52 Z" fill="${hair}" stroke="#000" stroke-width="2.5"/>`;
-    let frontHair = '';
-    if(hs===0) frontHair = `<path d="M24,48 L36,14 L52,32 L64,10 L82,30 L96,16 L96,52 Q60,34 24,48 Z" fill="${hair}" stroke="#000" stroke-width="2.5"/>`;
-    else if(hs===1) frontHair = `<path d="M24,55 Q24,12 60,10 Q96,12 96,55 L84,36 L60,28 L36,36 Z" fill="${hair}" stroke="#000" stroke-width="2.5"/>`;
-    else if(hs===2) frontHair = `<path d="M20,62 L30,18 L60,12 L90,18 L100,62 L80,40 L60,46 L40,40 Z" fill="${hair}" stroke="#000" stroke-width="2.5"/>`;
-    else frontHair = `<path d="M24,50 L40,16 L58,34 L76,14 L96,50 L76,38 L60,44 L42,38 Z" fill="${hair}" stroke="#000" stroke-width="2.5"/>`;
+    if(hs===0||hs===1) backHair = `<path d="M18,52 C10,90 14,132 24,146 L96,146 C106,132 110,90 102,52 Z" fill="${hair}" stroke="#000" stroke-width="2.2"/>`;
+    else if(hs===2||hs===3) backHair = `<ellipse cx="18" cy="86" rx="11" ry="34" fill="${hair}" stroke="#000" stroke-width="2.2"/><ellipse cx="102" cy="86" rx="11" ry="34" fill="${hair}" stroke="#000" stroke-width="2.2"/>`;
+    else if(hs===4) backHair = `<path d="M22,48 L12,96 L32,88 M98,48 L108,96 L88,88" fill="${hair}" stroke="#000" stroke-width="2.2"/>`;
 
-    let gear = '';
-    if(gs===0) gear = `<rect x="35" y="49" width="50" height="11" rx="3" fill="${eyeCol}" opacity="0.82" stroke="#000" stroke-width="2"/>`;
-    else if(gs===1) gear = `<path d="M28,88 L60,102 L92,88 L84,112 L36,112 Z" fill="#181822" stroke="${eyeCol}" stroke-width="2.5"/>`;
-    else if(gs===2) gear = `<path d="M22,120 L38,94 M98,120 L82,94" stroke="#ffd600" stroke-width="4" stroke-linecap="round"/>`;
+    // Front bangs (10 distinct styles)
+    const bangs = [
+      `<path d="M24,48 L36,14 L52,32 L64,10 L82,30 L96,16 L96,52 Q60,34 24,48 Z" fill="${hair}" stroke="#000" stroke-width="2.2"/>`,
+      `<path d="M24,54 Q24,12 60,10 Q96,12 96,54 L82,34 L60,44 L38,34 Z" fill="${hair}" stroke="#000" stroke-width="2.2"/>`,
+      `<path d="M20,62 L32,16 L60,12 L88,16 L100,62 L78,38 L60,52 L42,38 Z" fill="${hair}" stroke="#000" stroke-width="2.2"/>`,
+      `<path d="M24,50 L44,14 L60,24 L76,12 L96,50 L72,38 L46,56 Z" fill="${hair}" stroke="#000" stroke-width="2.2"/>`,
+      `<path d="M22,52 C22,10 98,10 98,52 L88,42 L68,26 L56,48 L36,28 Z" fill="${hair}" stroke="#000" stroke-width="2.2"/>`
+    ][hs%5];
+
+    // Class-specific outfit silhouettes
+    let outfit = '';
+    if(hero.cls==='铁壁') outfit = `<path d="M8,150 L18,92 L42,88 L60,96 L78,88 L102,92 L112,150 Z" fill="${hero.color}" stroke="#000" stroke-width="3"/><rect x="12" y="88" width="22" height="16" rx="4" fill="#ffd600" stroke="#000" stroke-width="2"/><rect x="86" y="88" width="22" height="16" rx="4" fill="#ffd600" stroke="#000" stroke-width="2"/>`;
+    else if(hero.cls==='疾风') outfit = `<path d="M16,150 L26,95 L60,88 L94,95 L104,150 Z" fill="${hero.color}" stroke="#000" stroke-width="3"/><path d="M26,92 Q60,114 94,92 L90,108 Q60,126 30,108 Z" fill="#e51a2e" stroke="#000" stroke-width="2"/>`;
+    else if(hero.cls==='异能') outfit = `<path d="M10,150 L24,90 L60,86 L96,90 L110,150 Z" fill="${hero.color}" stroke="#000" stroke-width="3"/><path d="M24,90 L38,132 L60,116 L82,132 L96,90" fill="#181228" stroke="#ffd600" stroke-width="2"/>`;
+    else outfit = `<path d="M16,150 L26,95 L60,86 L94,95 L104,150 Z" fill="${hero.color}" stroke="#000" stroke-width="3"/><path d="M40,90 L60,128 L80,90" fill="#151520" stroke="#000" stroke-width="2"/>`;
 
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 150">
       <defs>
-        <radialGradient id="${gid}" cx="50%" cy="35%" r="65%"><stop offset="0%" stop-color="${eyeCol}" stop-opacity="0.45"/><stop offset="100%" stop-color="${bg1}"/></radialGradient>
+        <radialGradient id="${gid}" cx="50%" cy="35%" r="68%"><stop offset="0%" stop-color="${eyeCol}" stop-opacity="0.5"/><stop offset="100%" stop-color="${bg1}"/></radialGradient>
       </defs>
       <rect width="120" height="150" fill="url(#${gid})"/>
-      <path d="M0,150 L60,50 L120,150 Z" fill="#ffffff" opacity="0.06"/>
+      <path d="M0,150 L60,40 L120,150 Z" fill="#fff" opacity="0.07"/>
       ${backHair}
-      <path d="M16,150 L26,95 L60,86 L94,95 L104,150 Z" fill="${hero.color}" stroke="#000" stroke-width="3"/>
-      <path d="M40,90 L60,128 L80,90" fill="#151520" stroke="#000" stroke-width="2"/>
-      <rect x="52" y="76" width="16" height="18" fill="${skin}" stroke="#000" stroke-width="2"/>
-      <path d="M34,48 C34,24 86,24 86,48 C86,74 74,88 60,90 C46,88 34,74 34,48 Z" fill="${skin}" stroke="#000" stroke-width="2.8"/>
-      <ellipse cx="47" cy="56" rx="6" ry="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
-      <ellipse cx="73" cy="56" rx="6" ry="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
-      <circle cx="47" cy="56" r="3.2" fill="${eyeCol}"/><circle cx="73" cy="56" r="3.2" fill="${eyeCol}"/>
-      <circle cx="48.5" cy="54.5" r="1.2" fill="#fff"/><circle cx="74.5" cy="54.5" r="1.2" fill="#fff"/>
-      <path d="M53,74 Q60,79 67,74" stroke="#000" stroke-width="2" fill="none"/>
+      ${outfit}
+      <rect x="52" y="75" width="16" height="18" fill="${skin}" stroke="#000" stroke-width="2"/>
+      <path d="M34,48 C34,24 86,24 86,48 C86,74 72,89 60,91 C48,89 34,74 34,48 Z" fill="${skin}" stroke="#000" stroke-width="2.6"/>
+      ${blush?`<ellipse cx="42" cy="65" rx="5" ry="2.5" fill="#ff6b81" opacity="0.45"/><ellipse cx="78" cy="65" rx="5" ry="2.5" fill="#ff6b81" opacity="0.45"/>`:''}
+      <path d="M58,64 L60,68 L62,64" stroke="#c99a74" stroke-width="1.5" fill="none"/>
+      <path d="M39,53 Q47,48 54,54" stroke="#000" stroke-width="2.4" fill="none"/>
+      <path d="M81,53 Q73,48 66,54" stroke="#000" stroke-width="2.4" fill="none"/>
+      <ellipse cx="47" cy="57" rx="5.8" ry="5.5" fill="#fff" stroke="#000" stroke-width="1.4"/>
+      <ellipse cx="73" cy="57" rx="5.8" ry="5.5" fill="#fff" stroke="#000" stroke-width="1.4"/>
+      <circle cx="47" cy="57.5" r="3.8" fill="${eyeCol}"/><circle cx="73" cy="57.5" r="3.8" fill="${eyeCol}"/>
+      <circle cx="47" cy="58" r="1.8" fill="#111"/><circle cx="73" cy="58" r="1.8" fill="#111"/>
+      <circle cx="49" cy="55.2" r="1.6" fill="#fff"/><circle cx="75" cy="55.2" r="1.6" fill="#fff"/>
+      <path d="M54,75 Q60,80 66,75" stroke="#000" stroke-width="2" fill="none"/>
       ${scar?`<path d="M68,45 L75,68" stroke="#e51a2e" stroke-width="2"/>`:''}
-      ${frontHair}
-      ${gear}
+      ${bangs}
     </svg>`;
     const url = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
     svgCache[hero.id] = url;
@@ -977,7 +1046,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
     function draw(){
       ctx.clearRect(0,0,W,H);
-      ctx.fillStyle = '#14151f'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = '#0d0e17'; ctx.fillRect(0,0,W,H);
+      // Parallax skyline silhouettes & neon glow
+      ctx.fillStyle = '#171929';
+      for(let i=0;i<14;i++){
+        const bx = (i*95 - (player.x*0.08)%95);
+        const bh = 48 + ((i*37)%65);
+        ctx.fillRect(bx, 0, 74, bh);
+        ctx.fillStyle = i%2===0 ? 'rgba(0,229,255,0.22)' : 'rgba(255,214,0,0.22)';
+        ctx.fillRect(bx+12, bh-16, 12, 6); ctx.fillRect(bx+38, bh-26, 12, 6);
+        ctx.fillStyle = '#171929';
+      }
       ctx.fillStyle = '#222434';
       ctx.fillRect(0, H*0.44, W, H*0.14);
       ctx.fillRect(W*0.43, 0, W*0.14, H);
@@ -1062,10 +1141,24 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   const vfxCtx = vfxCanvas.getContext('2d');
   let particles = [];
 
-  function spawnVfx(x, y, color, count=22, speed=250){
+  let vfxShapes = [];
+  function spawnVfx(x, y, color, count=22, speed=250, kind='burst'){
+    if(kind === 'lightning'){
+      const pts = [{x:x-60+Math.random()*120, y:0}];
+      for(let k=1;k<=5;k++) pts.push({x:x+(Math.random()*70-35), y:(y/5)*k});
+      pts.push({x, y});
+      vfxShapes.push({ type:'lightning', pts, color:'#00e5ff', life:0.28, maxLife:0.28 });
+    } else if(kind === 'slash'){
+      vfxShapes.push({ type:'slash', x, y, ang:-0.65+Math.random()*0.4, color:'#ffd600', life:0.25, maxLife:0.25 });
+    } else if(kind === 'gravity'){
+      vfxShapes.push({ type:'ring', x, y, r:85, color:'#b388ff', life:0.4, maxLife:0.4 });
+    } else if(kind === 'shield'){
+      vfxShapes.push({ type:'ring', x, y, r:60, color:'#00e5ff', life:0.35, maxLife:0.35 });
+    }
     for(let i=0;i<count;i++){
       const ang = Math.random()*Math.PI*2, spd = (0.3+Math.random()*0.9)*speed;
-      particles.push({ x, y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd, life:0.5+Math.random()*0.3, maxLife:0.8, size:4+Math.random()*5, color });
+      const vyBias = kind==='fire' ? -140 : kind==='heal' ? -110 : 0;
+      particles.push({ x, y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd + vyBias, life:0.45+Math.random()*0.3, maxLife:0.75, size:4+Math.random()*5, color, kind });
     }
   }
   function triggerShake(){
@@ -1079,7 +1172,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     d.style.top = (rect.top + 16) + 'px';
     document.body.appendChild(d); setTimeout(()=>d.remove(), 850);
   }
-  function showCutIn(heroDef, quote){
+  function showCutIn(heroDef, quote, ono='轟！！'){
+    document.getElementById('cutinOno').textContent = ono;
     const ov = document.getElementById('cutinOverlay');
     document.getElementById('cutinImg').src = getHeroPortrait(heroDef);
     document.getElementById('cutinHeroName').textContent = heroDef.name;
@@ -1097,7 +1191,26 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       const p = particles[i]; p.x += p.vx*0.016; p.y += p.vy*0.016; p.life -= 0.016;
       if(p.life<=0){ particles.splice(i,1); continue; }
       vfxCtx.globalAlpha = Math.max(0, p.life/p.maxLife);
-      vfxCtx.fillStyle = p.color; vfxCtx.fillRect(p.x, p.y, p.size, p.size);
+      vfxCtx.fillStyle = p.color;
+      if(p.kind==='heal'){ vfxCtx.fillRect(p.x-2,p.y-6,4,12); vfxCtx.fillRect(p.x-6,p.y-2,12,4); }
+      else if(p.kind==='fire'){ vfxCtx.beginPath(); vfxCtx.arc(p.x,p.y,p.size*0.7,0,Math.PI*2); vfxCtx.fill(); }
+      else { vfxCtx.fillRect(p.x, p.y, p.size, p.size); }
+    }
+    for(let i=vfxShapes.length-1;i>=0;i--){
+      const sh = vfxShapes[i]; sh.life -= 0.016;
+      if(sh.life<=0){ vfxShapes.splice(i,1); continue; }
+      vfxCtx.globalAlpha = Math.max(0, sh.life/sh.maxLife);
+      vfxCtx.strokeStyle = sh.color;
+      if(sh.type==='lightning'){
+        vfxCtx.lineWidth = 4; vfxCtx.beginPath();
+        sh.pts.forEach((pt,idx)=>idx===0?vfxCtx.moveTo(pt.x,pt.y):vfxCtx.lineTo(pt.x,pt.y));
+        vfxCtx.stroke();
+      } else if(sh.type==='slash'){
+        vfxCtx.save(); vfxCtx.translate(sh.x,sh.y); vfxCtx.rotate(sh.ang);
+        vfxCtx.fillStyle='#fff'; vfxCtx.beginPath(); vfxCtx.ellipse(0,0,95,8*(sh.life/sh.maxLife),0,0,Math.PI*2); vfxCtx.fill(); vfxCtx.restore();
+      } else if(sh.type==='ring'){
+        vfxCtx.lineWidth = 5; vfxCtx.beginPath(); vfxCtx.arc(sh.x,sh.y,sh.r*(1.2 - sh.life/sh.maxLife),0,Math.PI*2); vfxCtx.stroke();
+      }
     }
     vfxCtx.globalAlpha = 1;
     requestAnimationFrame(vfxLoop);
@@ -1189,7 +1302,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     const hpPct = Math.max(0, Math.round(u.hp/u.maxHp*100));
     const shPct = Math.min(100, Math.round((u.shield||0)/u.maxHp*100));
     return `
-      <div class="unit-6 ${isActive?'active-turn':''} ${u.hp<=0?'dead':''} ${u.isBoss?'boss-unit':''}" id="${domId}">
+      <div class="unit-6 ${isActive?'active-turn':(!isEnemy && Battle && !Battle.busy?'dimmed':'')} ${u.hp<=0?'dead':''} ${u.isBoss?'boss-unit':''}" id="${domId}">
+        <div class="status-icons">
+          ${u.stun>0?'<span class="st-ico" title="震慑">💫</span>':''}
+          ${u.burn>0?'<span class="st-ico" title="灼烧">🔥</span>':''}
+          ${u.bleed>0?'<span class="st-ico" title="流血">🩸</span>':''}
+          ${u.armorBreak>0?'<span class="st-ico" title="破甲">💔</span>':''}
+          ${u.taunt>0?'<span class="st-ico" title="嘲讽">🛡️</span>':''}
+        </div>
         <img src="${u.portrait}" alt="${u.name}">
         <div class="unit-6-info">
           <div class="unit-6-name">${u.name}</div>
@@ -1199,7 +1319,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           </div>
           <div class="unit-6-sub">
             <span>${u.hp}/${u.maxHp}</span>
-            <span>${u.stun>0?'💫震慑 ':''}${u.burn>0?'🔥灼烧 ':''}${u.bleed>0?'🩸流血 ':''}${u.armorBreak>0?'🛡️破甲 ':''}${u.taunt>0?'🛡️嘲讽':''}</span>
+            <span>${u.shield>0?`盾${u.shield}`:''}</span>
           </div>
         </div>
       </div>`;
@@ -1264,7 +1384,18 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     Battle.busy = true;
     Battle.energy = Math.min(Battle.maxEnergy, Math.max(0, Battle.energy - sk.cost));
 
+    const arenaEl = document.querySelector('.battle-arena-6v6');
+    const atkEl = document.getElementById('ally_' + Battle.turnIndex);
+    const vfxKind = (sk.burn ? 'fire' : def.faction==='电磁圣域' ? 'lightning' : def.faction==='星陨议会' ? 'gravity' : 'slash');
+
     const runAction = () => {
+      if(arenaEl) arenaEl.classList.add(skillIdx===2 ? 'cam-ult' : 'cam-atk');
+      if(atkEl) atkEl.classList.add('dash-atk');
+      setTimeout(()=>{
+        if(arenaEl) arenaEl.classList.remove('cam-atk','cam-ult');
+        if(atkEl) atkEl.classList.remove('dash-atk');
+      }, bDelay(320));
+
       if(sk.mult){
         const targets = skillIdx===2 ? Battle.enemies.filter(e=>e.hp>0).slice(0,3) : [pickEnemyTarget(false)].filter(Boolean);
         targets.forEach(tgt=>{
@@ -1277,9 +1408,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           tgt.hp = Math.max(0, tgt.hp - finalDmg);
           const tEl = document.getElementById('enemy_' + Battle.enemies.indexOf(tgt));
           if(tEl){
-            tEl.classList.add('hit-flash'); setTimeout(()=>tEl.classList.remove('hit-flash'), 140);
+            tEl.classList.add('hit-flash','recoil'); setTimeout(()=>tEl.classList.remove('hit-flash','recoil'), 160);
             const r = tEl.getBoundingClientRect();
-            spawnVfx(r.left+r.width/2, r.top+r.height/2, isCrit?'#ffd600':h.color, isCrit?26:14, 240);
+            spawnVfx(r.left+r.width/2, r.top+r.height/2, isCrit?'#ffd600':h.color, isCrit?26:16, 260, vfxKind);
             floatText(tEl, (isCrit?'暴击 ':'')+'-'+finalDmg+(isCrit?'!':''), isCrit?'crit':'');
           }
           if(sk.burn) tgt.burn = Math.max(tgt.burn||0, sk.burn);
@@ -1294,12 +1425,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
       if(sk.type === 'shield'){
         const sh = Math.round(h.maxHp * sk.shieldMult);
-        Battle.allies.forEach(a=>{ if(a.hp>0) a.shield += sh; });
+        Battle.allies.forEach((a,ai)=>{ if(a.hp>0){ a.shield += sh; const ae=document.getElementById('ally_'+ai); if(ae){const r=ae.getBoundingClientRect(); spawnVfx(r.left+r.width/2,r.top+r.height/2,'#00e5ff',8,120,'shield');} } });
         h.taunt = sk.taunt; AudioFX.hit();
         logBattle(`🛡️ ${h.name} 展开护盾，全队获得 ${sh} 护盾！`);
       }
       if(sk.type === 'support' || sk.type === 'ult_support'){
-        Battle.allies.forEach(a=>{ if(a.hp>0) a.hp = Math.min(a.maxHp, a.hp + Math.round(a.maxHp*(sk.healMult||0.2))); });
+        Battle.allies.forEach((a,ai)=>{ if(a.hp>0){ a.hp = Math.min(a.maxHp, a.hp + Math.round(a.maxHp*(sk.healMult||0.2))); const ae=document.getElementById('ally_'+ai); if(ae){const r=ae.getBoundingClientRect(); spawnVfx(r.left+r.width/2,r.top+r.height/2,'#00e676',10,120,'heal');} } });
         if(sk.energyGain) Battle.energy = Math.min(Battle.maxEnergy, Battle.energy + sk.energyGain);
         logBattle(`💚 ${h.name} 为全队恢复生命${sk.energyGain?`并回复 ${sk.energyGain} 点能量`:''}！`);
       }
@@ -1326,22 +1457,41 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   document.getElementById('btnSaitamaStrike').addEventListener('click', ()=>{
     if(!Battle || Battle.busy || Battle.saitama < 100) return;
     Battle.busy = true; Battle.saitama = 0;
-    const cutHero = HERO_MAP[State.leadHero] || HERO_MAP[Battle.allies.find(a=>a.hp>0)?.id] || HERO_ROSTER[0];
-    showCutIn(cutHero, '破晓终焉裁决！！');
+    const ov = document.getElementById('finalDawnOverlay');
+    const kanji = document.getElementById('dawnKanji');
+    const sub = document.getElementById('dawnSub');
+    ov.className = 'bw-manga';
+    kanji.style.display = 'block'; sub.style.display = 'block';
+    kanji.textContent = 'ドン！！'; sub.textContent = '破晓终焉一击 · 认真降临';
+    ov.style.display = 'flex';
+    AudioFX.king();
+
     setTimeout(()=>{
-      triggerShake(); AudioFX.ult();
+      ov.className = 'white-flash';
+      kanji.style.display = 'none'; sub.style.display = 'none';
+      AudioFX.ult();
+    }, 520);
+
+    setTimeout(()=>{
+      ov.style.display = 'none';
+      triggerShake();
       Battle.enemies.forEach((e,idx)=>{
         if(e.hp<=0) return;
-        const dmg = Math.max(900, Math.round(e.maxHp*0.48));
+        const dmg = Math.max(1100, Math.round(e.maxHp*0.52));
         e.hp = Math.max(0, e.hp - dmg);
         const el = document.getElementById('enemy_'+idx);
-        floatText(el, `终焉 -${dmg}!!`, 'crit');
+        if(el){
+          el.classList.add('hit-flash','recoil'); setTimeout(()=>el.classList.remove('hit-flash','recoil'), 220);
+          const r = el.getBoundingClientRect();
+          spawnVfx(r.left+r.width/2, r.top+r.height/2, '#ffd600', 30, 340, 'slash');
+          floatText(el, `终焉 -${dmg}!!`, 'crit');
+        }
       });
-      logBattle('💥 破晓降临全屏裁决，敌方全阵遭受毁灭性真伤！');
+      logBattle('💥 【破晓终焉一击】黑白漫威定格爆裂，敌方全阵遭受毁灭性真伤！');
       renderBattle();
-      if(Battle.enemies.every(e=>e.hp<=0)) setTimeout(handleVictory, 450);
-      else { Battle.busy = false; renderBattle(); }
-    }, 640);
+      if(Battle.enemies.every(e=>e.hp<=0)) setTimeout(handleVictory, 480);
+      else { Battle.busy = false; renderBattle(); if(battleAuto) setTimeout(runAutoBattleStep, bDelay(320)); }
+    }, 760);
   });
 
   function advanceTurn(){
