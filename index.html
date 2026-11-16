@@ -905,18 +905,31 @@ html,body{height:100%;height:100dvh;overflow:hidden;background:var(--bg);color:v
   function migrateState(parsed){
     const def = createDefaultState();
     const st = Object.assign(def, parsed);
-    if(!st.saveVersion || st.saveVersion < 2){
-      const mapId = id => id && id.startsWith('ur_') ? id.replace('ur_', 'ssr_') : id;
-      st.leadHero = mapId(st.leadHero);
-      st.frontRow = (st.frontRow || def.frontRow).map(mapId);
-      st.backRow = (st.backRow || def.backRow).map(mapId);
-      if(st.heroes){
-        const nh = {};
-        Object.entries(st.heroes).forEach(([k,v])=>{ nh[mapId(k)] = v; });
-        st.heroes = nh;
-      }
-      st.saveVersion = 2;
+    const mapId = id => {
+      if(!id) return null;
+      const mapped = id.startsWith('ur_') ? id.replace('ur_', 'ssr_') : id;
+      return HERO_MAP[mapped] ? mapped : null;
+    };
+    st.leadHero = mapId(st.leadHero) || 'ssr_lingfeng';
+    st.frontRow = (Array.isArray(st.frontRow) ? st.frontRow : def.frontRow).map(mapId);
+    st.backRow = (Array.isArray(st.backRow) ? st.backRow : def.backRow).map(mapId);
+    while(st.frontRow.length < 3) st.frontRow.push(null);
+    while(st.backRow.length < 3) st.backRow.push(null);
+    const nh = {};
+    Object.entries(st.heroes || {}).forEach(([k,v])=>{
+      const mk = mapId(k);
+      if(mk) nh[mk] = v;
+    });
+    if(Object.keys(nh).length === 0) Object.assign(nh, def.heroes);
+    if(!nh[st.leadHero]) st.leadHero = Object.keys(nh)[0];
+    st.heroes = nh;
+    if(![...st.frontRow, ...st.backRow].some(Boolean)){
+      st.frontRow = [...def.frontRow];
+      st.backRow = [...def.backRow];
     }
+    st.weapons = (st.weapons || []).filter(w => w && WEAPON_DEFS[w.defId]);
+    st.accessories = (st.accessories || []).filter(a => a && a.uid);
+    st.saveVersion = 3;
     return st;
   }
   let State = loadState();
@@ -1887,7 +1900,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;background:var(--bg);color:v
   function openHeroesModal(filterRarity='ALL'){
     const ids = getActiveSquadIds();
     const bonds = computeBonds(ids);
-    const owned = Object.keys(State.heroes).filter(id => filterRarity==='ALL' || HERO_MAP[id].rarity===filterRarity);
+    const owned = Object.keys(State.heroes).filter(id => HERO_MAP[id] && (filterRarity==='ALL' || HERO_MAP[id].rarity===filterRarity));
 
     openModal(`🦸 6v6 阵型布置 & 72英雄图鉴 (${Object.keys(State.heroes).length}/72 已解锁)`, `
       <div class="comic-box" style="padding:9px 12px;margin-bottom:10px;background:#151c28;border-color:var(--cyan)">
@@ -2006,8 +2019,8 @@ html,body{height:100%;height:100dvh;overflow:hidden;background:var(--bg);color:v
   };
 
   function openGearModal(selHero){
-    const owned = Object.keys(State.heroes);
-    const hid = selHero || owned[0];
+    const owned = Object.keys(State.heroes).filter(id => HERO_MAP[id]);
+    const hid = (selHero && HERO_MAP[selHero]) ? selHero : owned[0];
     const h = State.heroes[hid];
     const eqWp = State.weapons.find(w=>w.uid===h.weaponId);
     const eqCore = State.accessories.find(a=>a.uid===h.accCore);
